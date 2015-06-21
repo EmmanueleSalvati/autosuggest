@@ -1,3 +1,4 @@
 .DS_Store
 *.pyc
 autosuggest\ example\ -\ old.gif
+.ipynb_checkpoints/
