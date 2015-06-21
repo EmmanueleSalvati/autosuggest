@@ -48,7 +48,8 @@ class Node:
         """DFS for Ternary Search Tree"""
 
         if self.flag == 1:
-            print("Match : ", match)
+            print match
+            # print "Match : ", match
 
         if self.center == 0 and self.left == 0 and self.right == 0:
             return
@@ -87,13 +88,13 @@ class Node:
             key = string[0]
 
             if key < self.ch:
-                if(self.left == 0):
-                    print("No Match Found")
+                if self.left == 0:
+                    print "No Match Found"
                     return
                 self.left.search(string, match)
 
             elif key > self.ch:
-                if(self.right == 0):
+                if self.right == 0:
                     print("Not Match Found")
                     return
                 self.right.search(string, match)
@@ -166,6 +167,28 @@ def read_data_model(filename):
         root = pkl.load(pklfile)
 
     return root
+
+
+import sys
+class ListStream:
+    def __init__(self):
+        self.data = []
+    def write(self, s):
+        self.data.append(s)
+    def __enter__(self):
+        sys.stdout = self
+        return self
+    def __exit__(self, ext_type, exc_value, traceback):
+        sys.stdout = sys.__stdout__
+
+
+def generate_suggestions(search_string):
+    """Function to generate a suggestion from a sample string"""
+
+    root = read_data_model('data_model.pkl')
+    with ListStream() as x:
+        root.search(search_string, '')
+    print x.data
 
 
 if __name__ == '__main__':
