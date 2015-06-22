@@ -1,10 +1,13 @@
-"""Please Check This link For Theory Of TST :
+"""
+Credits to this blogger for writing the code of ternary search trees:
+http://hacktalks.blogspot.com/2012/03/implementing-auto-complete-with-ternary.html
+
+Please Check This link For Theory Of TST :
 # http://en.wikipedia.org/wiki/Ternary_search_tree
 
 Each node contains 5 parts They are
 self.ch => contains the character
-self.flag => Flag to Check whether the node is an end character of a valid
-string
+self.flag => Flag to Check whether the node is an end character of a valid string
 self.left, self.right => Links to the next nodes (Working similar to Binary
                                                   Search Tree)
 # self.center => Link to the next valid character
@@ -192,8 +195,7 @@ def write_partial_model(pkl_filename, doc_filename):
             statement.strip('\r\n')
             node.Add(statement, node)
 
-    with open(pkl_filename, 'wb') as pklfile:
-        pkl.dump(node, pklfile)
+    pkl.dump(node, pkl_filename)
 
 
 def write_data_model(doc_filename='data/documents.txt'):
@@ -207,11 +209,12 @@ def write_data_model(doc_filename='data/documents.txt'):
     doc_filename = doc_filename.strip('.txt')
     files = ['%s-%s.txt' % (doc_filename, i) for i in range(1, numiters)]
 
-    for i in range(numiters - 1):
-        write_partial_model(pickles[i], files[i])
+    with open('data/data_model.pkl', 'wb') as pklfile:
+        for i in range(numiters - 1):
+            write_partial_model(pklfile, files[i])
 
 
-def read_data_model(filename):
+def read_data_model(filename='data/data_model.pkl'):
     """Reads the ternary search tree from filename (a pickle file)
     returns the tree"""
 
@@ -241,31 +244,22 @@ class ListStream:
 def generate_suggestions(search_string):
     """Function to generate a suggestion from a sample string"""
 
-    root = read_data_model('data_model.pkl')
+    root = read_data_model('data/data_model.pkl')
     with ListStream() as x:
         root.search(search_string, '')
-    print x.data
+    print [s.strip('\n') for s in x.data if s != '\n']
 
 
 if __name__ == '__main__':
-    """Usage:
+    """This is to create the data structure
 
-    import tst
+    Usage:
 
-    # to save the data model
-    corpus = tst.read_json()
-    tst.write_data_corpus('data/documents.txt', corpus)
-    corpus_path = 'data/documents.txt'
+    python tst.py
 
-    root = Node('', 0)
-    tst.fileparse(corpus_path, root)
-    tst.write_data_model('data_model.pkl', root)
-
-    # to read the data model
-    root = tst.read_data_model('data_model.pkl')
-
-    # to search for an auto-suggest
-    root.search('Hell', '')
+    # to generate a suggestion
+    from tst import generate_suggestions
+    generate_suggestions('h')
     """
 
     root = Node('', 0)
@@ -273,17 +267,8 @@ if __name__ == '__main__':
     if not os.path.exists('data/documents.txt'):
         corpus = read_json()
         write_data_corpus('data/documents.txt', corpus)
-
-        # Give the Path to the Dictionary File in
         corpus_path = "data/documents.txt"
         fileparse(corpus_path, root)
 
     split_data_corpus('data/documents.txt')
     write_data_model()
-
-    # write_data_model('data_model.pkl', root)
-
-    # inp = ''
-    # while inp != 'q':
-    #     inp = raw_input("Enter String : ",)
-    #     root.search(inp, '')
