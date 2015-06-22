@@ -11,7 +11,10 @@ self.left, self.right => Links to the next nodes (Working similar to Binary
 """
 
 import json
-import pickle as pkl
+import cPickle as pkl
+import sys
+import os.path
+sys.setrecursionlimit(10000)
 
 
 class Node:
@@ -126,7 +129,7 @@ def fileparse(filename, node):
         line = fd.readline().strip('\r\n')
 
 
-def read_json(jsonfile='sample_conversations.json'):
+def read_json(jsonfile='data/sample_conversations.json'):
     """reads the sample conversation and returns a corpus of statements"""
 
     corpus = []
@@ -151,12 +154,61 @@ def write_data_corpus(filename, documents):
             f.write(enc_statement + '\n')
 
 
-def write_data_model(filename, data_tree):
+def num_iters(docs_file):
+    """Simply returns the number of texts divided by 1000"""
+
+    with open(docs_file, 'r') as docs:
+        num_docs = len(docs.readlines())
+        num_iters = num_docs/1000 + 1
+
+    return num_iters
+
+
+def split_data_corpus(filename):
+    """Split the large file of all phrases into smaller chunks of 1000 lines
+    each. Creates new files"""
+
+    fid = 1
+    with open(filename, 'r') as infile:
+        f = open('%s-%s.txt' % (filename.strip('.txt'), fid), 'wb')
+        for line, doc in enumerate(infile):
+            f.write(doc)
+            if not line % 1000 and line > 1:
+                f.close()
+                fid += 1
+                f = open('%s-%s.txt' % (filename.strip('.txt'), fid),
+                         'wb')
+        f.close()
+
+
+def write_partial_model(pkl_filename, doc_filename):
+    """Writes one pickle file with a partial data model"""
+
+    node = Node('', 0)
+    print pkl_filename, doc_filename
+
+    with open(doc_filename, 'r') as docs:
+        for statement in docs:
+            statement.strip('\r\n')
+            node.Add(statement, node)
+
+    with open(pkl_filename, 'wb') as pklfile:
+        pkl.dump(node, pklfile)
+
+
+def write_data_model(doc_filename='data/documents.txt'):
     """data_tree is the ternary search tree.
     Function that dumps the tree into a pickle file"""
 
-    with open(filename, 'wb') as pklfile:
-        pkl.dump(data_tree, pklfile)
+    numiters = num_iters(doc_filename) + 1
+    print 'number of iterations:', numiters - 1
+
+    pickles = ['data/data_model_%s.pkl' % i for i in range(1, numiters)]
+    doc_filename = doc_filename.strip('.txt')
+    files = ['%s-%s.txt' % (doc_filename, i) for i in range(1, numiters)]
+
+    for i in range(numiters - 1):
+        write_partial_model(pickles[i], files[i])
 
 
 def read_data_model(filename):
@@ -169,15 +221,19 @@ def read_data_model(filename):
     return root
 
 
-import sys
 class ListStream:
+    """Class used by generate_suggestions, to output the stdout to a list"""
+
     def __init__(self):
         self.data = []
+
     def write(self, s):
         self.data.append(s)
+
     def __enter__(self):
         sys.stdout = self
         return self
+
     def __exit__(self, ext_type, exc_value, traceback):
         sys.stdout = sys.__stdout__
 
@@ -198,8 +254,8 @@ if __name__ == '__main__':
 
     # to save the data model
     corpus = tst.read_json()
-    tst.write_data_corpus('documents.txt')
-    corpus_path = 'documents.txt'
+    tst.write_data_corpus('data/documents.txt', corpus)
+    corpus_path = 'data/documents.txt'
 
     root = Node('', 0)
     tst.fileparse(corpus_path, root)
@@ -214,12 +270,20 @@ if __name__ == '__main__':
 
     root = Node('', 0)
 
-    # Give the Path to the Dictionary File in
-    Path_to_dict = "test.txt"
+    if not os.path.exists('data/documents.txt'):
+        corpus = read_json()
+        write_data_corpus('data/documents.txt', corpus)
 
-    fileparse(Path_to_dict, root)
+        # Give the Path to the Dictionary File in
+        corpus_path = "data/documents.txt"
+        fileparse(corpus_path, root)
 
-    inp = ''
-    while inp != 'q':
-        inp = raw_input("Enter String : ",)
-        root.search(inp, '')
+    split_data_corpus('data/documents.txt')
+    write_data_model()
+
+    # write_data_model('data_model.pkl', root)
+
+    # inp = ''
+    # while inp != 'q':
+    #     inp = raw_input("Enter String : ",)
+    #     root.search(inp, '')
